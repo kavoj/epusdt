@@ -40,12 +40,6 @@ jobs:
         with:
           go-version-file: src/go.mod
 
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@v4.1.1
-
-      - name: Install Syft
-        uses: anchore/sbom-action/download-syft@v0.24.0
-
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v7
         with:
@@ -59,4 +53,4 @@ jobs:
       - name: Attest Release Checksums
         uses: actions/attest@v4
         with:
-          subject-checksums: src/dist/epusdt_${{ github.ref_name }}_checksums.txt
+          subject-checksums: src/dist/SHA256SUMS
