@@ -2,12 +2,13 @@ package middleware
 
 import (
 	"bytes"
+	"io/ioutil"
+
 	"github.com/assimon/luuu/config"
 	"github.com/assimon/luuu/util/constant"
 	"github.com/assimon/luuu/util/json"
 	"github.com/assimon/luuu/util/sign"
 	"github.com/labstack/echo/v4"
-	"io/ioutil"
 )
 
 func CheckApiSign() echo.MiddlewareFunc {

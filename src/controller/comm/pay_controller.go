@@ -1,13 +1,14 @@
 package comm
 
 import (
+	"html/template"
+	"net/http"
+	"path/filepath"
+
 	"github.com/assimon/luuu/config"
 	"github.com/assimon/luuu/model/response"
 	"github.com/assimon/luuu/model/service"
 	"github.com/labstack/echo/v4"
-	"html/template"
-	"net/http"
-	"path/filepath"
 )
 
 // CheckoutCounter 收银台
@@ -15,12 +16,21 @@ func (c *BaseCommController) CheckoutCounter(ctx echo.Context) (err error) {
 	tradeId := ctx.Param("trade_id")
 	resp, err := service.GetCheckoutCounterByTradeId(tradeId)
 	if err != nil {
+		if err == service.ErrOrder {
+			tmpl, err := template.ParseFiles(filepath.Join(config.StaticFilePath, "index.html"))
+			if err != nil {
+				return ctx.String(http.StatusOK, err.Error())
+			}
+			emptyResp := response.CheckoutCounterResponse{}
+			return tmpl.Execute(ctx.Response(), emptyResp)
+		}
 		return ctx.String(http.StatusOK, err.Error())
 	}
 	tmpl, err := template.ParseFiles(filepath.Join(config.StaticFilePath, "index.html"))
 	if err != nil {
 		return ctx.String(http.StatusOK, err.Error())
 	}
+	resp.Network = "TRON"
 	return tmpl.Execute(ctx.Response(), resp)
 }
 
