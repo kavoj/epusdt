@@ -108,11 +108,12 @@ func UpdateOrderIsExpirationById(id uint64, expirationCutoff time.Time) (bool, e
 	return result.RowsAffected > 0, result.Error
 }
 
-// GetTradeIdByWalletAddressAndAmountAndToken resolves the reserved trade id by address, token and amount.
-func GetTradeIdByWalletAddressAndAmountAndToken(address string, token string, amount float64) (string, error) {
+// GetTradeIdByWalletAddressAndAmountAndToken resolves the reserved trade id by network, address, token and amount.
+func GetTradeIdByWalletAddressAndAmountAndToken(network string, address string, token string, amount float64) (string, error) {
 	scaledAmount, _ := normalizeLockAmount(amount)
 	var lock mdb.TransactionLock
 	err := dao.RuntimeDB.Model(&mdb.TransactionLock{}).
+		Where("network = ?", network).
 		Where("address = ?", address).
 		Where("token = ?", normalizeLockToken(token)).
 		Where("amount_scaled = ?", scaledAmount).
@@ -128,12 +129,13 @@ func GetTradeIdByWalletAddressAndAmountAndToken(address string, token string, am
 	return lock.TradeId, nil
 }
 
-// LockTransaction reserves an address+token+amount pair in sqlite until expiration.
-func LockTransaction(address, token, tradeID string, amount float64, expirationTime time.Duration) error {
+// LockTransaction reserves a network+address+token+amount pair in sqlite until expiration.
+func LockTransaction(network, address, token, tradeID string, amount float64, expirationTime time.Duration) error {
 	scaledAmount, amountText := normalizeLockAmount(amount)
 	normalizedToken := normalizeLockToken(token)
 	now := time.Now()
 	lock := &mdb.TransactionLock{
+		Network:      network,
 		Address:      address,
 		Token:        normalizedToken,
 		AmountScaled: scaledAmount,
@@ -143,7 +145,8 @@ func LockTransaction(address, token, tradeID string, amount float64, expirationT
 	}
 
 	return dao.RuntimeDB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("address = ?", address).
+		if err := tx.Where("network = ?", network).
+			Where("address = ?", address).
 			Where("token = ?", normalizedToken).
 			Where("amount_scaled = ?", scaledAmount).
 			Where("expires_at <= ?", now).
@@ -165,10 +168,11 @@ func LockTransaction(address, token, tradeID string, amount float64, expirationT
 	})
 }
 
-// UnLockTransaction releases the reservation for address+token+amount.
-func UnLockTransaction(address string, token string, amount float64) error {
+// UnLockTransaction releases the reservation for network+address+token+amount.
+func UnLockTransaction(network string, address string, token string, amount float64) error {
 	scaledAmount, _ := normalizeLockAmount(amount)
 	return dao.RuntimeDB.
+		Where("network = ?", network).
 		Where("address = ?", address).
 		Where("token = ?", normalizeLockToken(token)).
 		Where("amount_scaled = ?", scaledAmount).

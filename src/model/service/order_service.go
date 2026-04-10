@@ -28,8 +28,10 @@ const (
 	IncrementalMaximumNumber = 100
 )
 
-var gCreateTransactionLock sync.Mutex
-var gOrderProcessingLock sync.Mutex
+var (
+	gCreateTransactionLock sync.Mutex
+	gOrderProcessingLock   sync.Mutex
+)
 
 // CreateTransaction creates a new payment order.
 func CreateTransaction(req *request.CreateTransactionRequest) (*response.CreateTransactionResponse, error) {
@@ -38,6 +40,7 @@ func CreateTransaction(req *request.CreateTransactionRequest) (*response.CreateT
 
 	token := strings.ToUpper(strings.TrimSpace(req.Token))
 	currency := strings.ToUpper(strings.TrimSpace(req.Currency))
+	network := strings.ToLower(strings.TrimSpace(req.Network))
 	payAmount := math.MustParsePrecFloat64(req.Amount, 2)
 	rate := config.GetRateForCoin(strings.ToLower(token), strings.ToLower(currency))
 	if rate <= 0 {
@@ -61,7 +64,7 @@ func CreateTransaction(req *request.CreateTransactionRequest) (*response.CreateT
 		return nil, constant.OrderAlreadyExists
 	}
 
-	walletAddress, err := data.GetAvailableWalletAddress()
+	walletAddress, err := data.GetAvailableWalletAddressByNetwork(network)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +74,7 @@ func CreateTransaction(req *request.CreateTransactionRequest) (*response.CreateT
 
 	tradeID := GenerateCode()
 	amount := math.MustParsePrecFloat64(decimalTokenAmount.InexactFloat64(), 2)
-	availableAddress, availableAmount, err := ReserveAvailableWalletAndAmount(tradeID, token, amount, walletAddress)
+	availableAddress, availableAmount, err := ReserveAvailableWalletAndAmount(tradeID, network, token, amount, walletAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -88,6 +91,7 @@ func CreateTransaction(req *request.CreateTransactionRequest) (*response.CreateT
 		ActualAmount:   availableAmount,
 		ReceiveAddress: availableAddress,
 		Token:          token,
+		Network:        network,
 		Status:         mdb.StatusWaitPay,
 		NotifyUrl:      req.NotifyUrl,
 		RedirectUrl:    req.RedirectUrl,
@@ -148,20 +152,20 @@ func OrderProcessing(req *request.OrderProcessingRequest) error {
 		return err
 	}
 
-	if err = data.UnLockTransaction(req.ReceiveAddress, req.Token, req.Amount); err != nil {
+	if err = data.UnLockTransaction(req.Network, req.ReceiveAddress, req.Token, req.Amount); err != nil {
 		log.Sugar.Warnf("[order] unlock transaction after pay success failed, trade_id=%s, err=%v", req.TradeId, err)
 	}
 	return nil
 }
 
-// ReserveAvailableWalletAndAmount finds and locks an address+token+amount pair.
-func ReserveAvailableWalletAndAmount(tradeID string, token string, amount float64, walletAddress []mdb.WalletAddress) (string, float64, error) {
+// ReserveAvailableWalletAndAmount finds and locks a network+address+token+amount pair.
+func ReserveAvailableWalletAndAmount(tradeID string, network string, token string, amount float64, walletAddress []mdb.WalletAddress) (string, float64, error) {
 	availableAddress := ""
 	availableAmount := amount
 
 	tryLockWalletFunc := func(targetAmount float64) (string, error) {
 		for _, address := range walletAddress {
-			err := data.LockTransaction(address.Address, token, tradeID, targetAmount, config.GetOrderExpirationTimeDuration())
+			err := data.LockTransaction(network, address.Address, token, tradeID, targetAmount, config.GetOrderExpirationTimeDuration())
 			if err == nil {
 				return address.Address, nil
 			}

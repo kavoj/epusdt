@@ -40,7 +40,7 @@ func RegisterRoute(e *echo.Echo) {
 			body["currency"] = "cny"
 		}
 		if _, ok := body["network"]; !ok {
-			body["network"] = "TRON"
+			body["network"] = "tron"
 		}
 		ctx.Set("request_body", body)
 
@@ -57,4 +57,11 @@ func RegisterRoute(e *echo.Echo) {
 	gmpayV1 := paymentRoute.Group("/gmpay/v1")
 	gmpayV1.POST("/order/create-transaction", comm.Ctrl.CreateTransaction, middleware.CheckApiSign())
 
+	// wallet management routes
+	walletV1 := gmpayV1.Group("/wallet", middleware.CheckApiToken())
+	walletV1.POST("/add", comm.Ctrl.AddWallet)
+	walletV1.GET("/list", comm.Ctrl.ListWallets)
+	walletV1.GET("/:id", comm.Ctrl.GetWallet)
+	walletV1.POST("/:id/status", comm.Ctrl.ChangeWalletStatus)
+	walletV1.POST("/:id/delete", comm.Ctrl.DeleteWallet)
 }

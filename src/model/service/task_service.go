@@ -110,7 +110,7 @@ func checkTrxTransfers(address string, wg *sync.WaitGroup) {
 		}
 
 		txID := transfer.Get("txID").String()
-		tradeID, err := data.GetTradeIdByWalletAddressAndAmountAndToken(address, "TRX", amount)
+		tradeID, err := data.GetTradeIdByWalletAddressAndAmountAndToken(mdb.NetworkTron, address, "TRX", amount)
 		if err != nil {
 			panic(err)
 		}
@@ -134,6 +134,7 @@ func checkTrxTransfers(address string, wg *sync.WaitGroup) {
 		req := &request.OrderProcessingRequest{
 			ReceiveAddress:     address,
 			Token:              "TRX",
+			Network:            mdb.NetworkTron,
 			TradeId:            tradeID,
 			Amount:             amount,
 			BlockTransactionId: txID,
@@ -212,7 +213,7 @@ func checkTrc20Transfers(address string, wg *sync.WaitGroup) {
 		}
 
 		txID := transfer.Get("transaction_id").String()
-		tradeID, err := data.GetTradeIdByWalletAddressAndAmountAndToken(address, "USDT", amount)
+		tradeID, err := data.GetTradeIdByWalletAddressAndAmountAndToken(mdb.NetworkTron, address, "USDT", amount)
 		if err != nil {
 			panic(err)
 		}
@@ -236,6 +237,7 @@ func checkTrc20Transfers(address string, wg *sync.WaitGroup) {
 		req := &request.OrderProcessingRequest{
 			ReceiveAddress:     address,
 			Token:              "USDT",
+			Network:            mdb.NetworkTron,
 			TradeId:            tradeID,
 			Amount:             amount,
 			BlockTransactionId: txID,
@@ -263,6 +265,7 @@ func sendPaymentNotification(order *mdb.Orders) {
 			"📋 <b>订单信息</b>\n"+
 			"├ 交易号：<code>%s</code>\n"+
 			"├ 订单号：<code>%s</code>\n"+
+			"├ 网络：<code>%s</code>\n"+
 			"└ 钱包地址：<code>%s</code>\n\n"+
 			"⏰ <b>时间信息</b>\n"+
 			"├ 创建时间：%s\n"+
@@ -273,9 +276,24 @@ func sendPaymentNotification(order *mdb.Orders) {
 		strings.ToUpper(order.Token),
 		order.TradeId,
 		order.OrderId,
+		networkDisplay(order.Network),
 		order.ReceiveAddress,
 		order.CreatedAt.ToDateTimeString(),
 		carbon.Now().ToDateTimeString(),
 	)
 	telegram.SendToBot(msg)
+}
+
+func networkDisplay(n string) string {
+	switch n {
+	case mdb.NetworkTron:
+		return "Tron"
+	case mdb.NetworkSolana:
+		return "Solana"
+	default:
+		if n == "" {
+			return "Tron"
+		}
+		return strings.ToUpper(n)
+	}
 }

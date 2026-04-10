@@ -5,6 +5,11 @@ const (
 	TokenStatusDisable = 2
 )
 
+const (
+	NetworkTron   = "tron"
+	NetworkSolana = "solana"
+)
+
 type WalletAddress struct {
 	Network string `gorm:"column:network;uniqueIndex:wallet_address_network_address_uindex" json:"network"`
 	Address string `gorm:"column:address;uniqueIndex:wallet_address_network_address_uindex" json:"address"`

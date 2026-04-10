@@ -328,3 +328,11 @@ func GetCallbackRetryBaseDuration() time.Duration {
 	}
 	return time.Duration(seconds) * time.Second
 }
+
+func GetSolanaRpcUrl() string {
+	rpcUrl := viper.GetString("solana_rpc_url")
+	if rpcUrl == "" {
+		return "https://api.mainnet-beta.solana.com"
+	}
+	return rpcUrl
+}
