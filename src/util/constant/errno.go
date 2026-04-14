@@ -13,21 +13,25 @@ var Errno = map[int]string{
 	10008: "order does not exist",
 	10009: "failed to parse request params",
 	10010: "order status already changed",
+	10011: "supported asset already exists",
+	10012: "supported asset not found",
 }
 
 var (
-	SystemErr                  = Err(400)
-	SignatureErr               = Err(401)
-	WalletAddressAlreadyExists = Err(10001)
-	OrderAlreadyExists         = Err(10002)
-	NotAvailableWalletAddress  = Err(10003)
-	PayAmountErr               = Err(10004)
-	NotAvailableAmountErr      = Err(10005)
-	RateAmountErr              = Err(10006)
-	OrderBlockAlreadyProcess   = Err(10007)
-	OrderNotExists             = Err(10008)
-	ParamsMarshalErr           = Err(10009)
-	OrderStatusConflict        = Err(10010)
+	SystemErr                   = Err(400)
+	SignatureErr                = Err(401)
+	WalletAddressAlreadyExists  = Err(10001)
+	OrderAlreadyExists          = Err(10002)
+	NotAvailableWalletAddress   = Err(10003)
+	PayAmountErr                = Err(10004)
+	NotAvailableAmountErr       = Err(10005)
+	RateAmountErr               = Err(10006)
+	OrderBlockAlreadyProcess    = Err(10007)
+	OrderNotExists              = Err(10008)
+	ParamsMarshalErr            = Err(10009)
+	OrderStatusConflict         = Err(10010)
+	SupportedAssetAlreadyExists = Err(10011)
+	SupportedAssetNotFound      = Err(10012)
 )
 
 type RspError struct {

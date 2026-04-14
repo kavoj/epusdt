@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"strings"
 
+	"github.com/assimon/luuu/model/mdb"
 	"github.com/btcsuite/btcutil/base58"
 )
 
@@ -43,4 +44,35 @@ func isValidTronAddress(addr string) bool {
 	hash2 := sha256.Sum256(hash[:])
 
 	return string(checksum) == string(hash2[:4])
+}
+
+func isValidSolanaAddress(addr string) bool {
+	addr = strings.TrimSpace(addr)
+	if addr == "" {
+		return false
+	}
+	decoded := base58.Decode(addr)
+	return len(decoded) == 32
+}
+
+func isValidAddressByNetwork(network, addr string) bool {
+	switch strings.ToLower(strings.TrimSpace(network)) {
+	case mdb.NetworkTron:
+		return isValidTronAddress(addr)
+	case mdb.NetworkSolana:
+		return isValidSolanaAddress(addr)
+	default:
+		// 其余 EVM 链统一使用 0x 地址校验
+		return isValidEthereumAddress(addr)
+	}
+}
+
+func normalizeWalletAddressByNetwork(network, addr string) string {
+	addr = strings.TrimSpace(addr)
+	switch strings.ToLower(strings.TrimSpace(network)) {
+	case mdb.NetworkTron, mdb.NetworkSolana:
+		return addr
+	default:
+		return strings.ToLower(addr)
+	}
 }
